@@ -139,9 +139,12 @@ The script includes pre-loaded sample data:
 ```
 store-database/
 │
-├── store.sql        # Full database script (DDL + DML)
-├── ERD.png          # Entity Relationship Diagram
-└── README.md        # Project documentation
+├── store.sql        
+├── erd_production_v2.png          
+├── mapping_v2.png          
+├── commend.html
+├── store.pdf      
+└── README.md       
 ```
 
 ---
