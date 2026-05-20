@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SQL Code — Store Management DB</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161b22;
+    --border: #21262d;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #e3b341;
+    --pink: #f778ba;
+    --purple: #bc8cff;
+    --red: #ff7b72;
+    --cyan: #79c0ff;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --line-num: #3d444d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1.5rem 5rem;
+  }
+
+  /* Header */
+  .header {
+    max-width: 980px;
+    margin: 0 auto 2.5rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    animation: fadeIn 0.5s ease both;
+  }
+
+  .header-left h1 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .header-left h1 span { color: var(--accent); }
+
+  .header-left p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+
+  .stats {
+    display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;
+  }
+
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.72rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+
+  .stat span { color: var(--green); }
+
+  /* Tabs */
+  .tabs {
+    max-width: 980px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    animation: fadeIn 0.5s 0.1s ease both;
+    opacity: 0;
+  }
+
+  .tab {
+    padding: 0.55rem 1.1rem;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+    user-select: none;
+    margin-bottom: -1px;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Code sections */
+  .sections {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  .code-section {
+    display: none;
+    animation: fadeIn 0.3s ease both;
+  }
+
+  .code-section.visible { display: block; }
+
+  /* Code block */
+  .code-block {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: #1c2128;
+  }
+
+  .code-header-left {
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+
+  .dots { display: flex; gap: 5px; }
+  .dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+  }
+  .dot.r { background: #ff5f57; }
+  .dot.y { background: #febc2e; }
+  .dot.g { background: #28c840; }
+
+  .code-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .copy-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+  .code-body {
+    padding: 1.25rem 0;
+    overflow-x: auto;
+  }
+
+  table.code-table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table.code-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  table.code-table td {
+    padding: 0 0;
+    line-height: 1.6;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    vertical-align: top;
+    white-space: pre;
+  }
+
+  td.ln {
+    color: var(--line-num);
+    text-align: right;
+    padding: 0 1.2rem 0 1.2rem;
+    user-select: none;
+    min-width: 3rem;
+    font-size: 0.72rem;
+  }
+
+  td.code {
+    color: var(--text);
+    padding-right: 2rem;
+  }
+
+  /* Syntax colors */
+  .kw  { color: var(--red);    font-weight: 500; }
+  .ty  { color: var(--cyan);   }
+  .st  { color: var(--orange); }
+  .nm  { color: var(--purple); }
+  .cm  { color: #484f58; font-style: italic; }
+  .tb  { color: var(--green);  }
+  .fn  { color: var(--accent); }
+  .op  { color: var(--pink);   }
+  .al  { color: var(--orange); font-style: italic; }
+  .pn  { color: var(--muted);  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Store Management <span>SQL</span></h1>
+    <p>Complete source code — CREATE, INSERT &amp; SELECT statements</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><span>5</span> Tables</div>
+    <div class="stat"><span>5</span> Categories</div>
+    <div class="stat"><span>5</span> Customers</div>
+    <div class="stat"><span>4</span> Queries</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs" id="tabs">
+  <div class="tab active" onclick="showTab('create')">CREATE TABLES</div>
+  <div class="tab" onclick="showTab('insert')">INSERT DATA</div>
+  <div class="tab" onclick="showTab('select')">SELECT QUERIES</div>
+</div>
+
+<div class="sections">
+
+  <!-- ============ CREATE TABLES ============ -->
+  <div class="code-section visible" id="create">
+
+    <!-- CATEGORIES -->
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">CATEGORIES table</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="cat-create"></tbody></table>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">CUSTOMERS table</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="cust-create"></tbody></table>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">PRODUCTS table</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="prod-create"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">ORDERS table</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="ord-create"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ORDER_ITEMS -->
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">ORDER_ITEMS table</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="oi-create"></tbody></table>
+      </div>
+    </div>
+
+  </div><!-- /create -->
+
+  <!-- ============ INSERT DATA ============ -->
+  <div class="code-section" id="insert">
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">INSERT INTO CATEGORIES</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="ins-cat"></tbody></table>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">INSERT INTO CUSTOMERS</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="ins-cust"></tbody></table>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">INSERT INTO PRODUCTS</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="ins-prod"></tbody></table>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">INSERT INTO ORDERS</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="ins-ord"></tbody></table>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">INSERT INTO ORDER_ITEMS</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="ins-oi"></tbody></table>
+      </div>
+    </div>
+
+  </div><!-- /insert -->
+
+  <!-- ============ SELECT QUERIES ============ -->
+  <div class="code-section" id="select">
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">Query 1 — Orders with Customer Names</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="sel1"></tbody></table>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">Query 2 — Order Details (order_id = 1)</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="sel2"></tbody></table>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">Query 3 — Total Orders &amp; Spending per Customer</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="sel3"></tbody></table>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <span class="code-label">Query 4 — Products with Low Stock</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+      <div class="code-body">
+        <table class="code-table"><tbody id="sel4"></tbody></table>
+      </div>
+    </div>
+
+  </div><!-- /select -->
+
+</div><!-- /sections -->
+
+<script>
+// ── Tab switching ──────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.code-section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('visible');
+  event.target.classList.add('active');
+}
+
+// ── Copy button ────────────────────────────────────────────────
+function copyCode(btn) {
+  const tbody = btn.closest('.code-block').querySelector('tbody');
+  const text = Array.from(tbody.querySelectorAll('tr'))
+    .map(tr => tr.querySelector('td.code').innerText)
+    .join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+// ── Render helper ──────────────────────────────────────────────
+function render(tbodyId, lines) {
+  const tbody = document.getElementById(tbodyId);
+  lines.forEach((html, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="ln">${i + 1}</td><td class="code">${html}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Shorthand tags ─────────────────────────────────────────────
+const K = s => `<span class="kw">${s}</span>`;
+const T = s => `<span class="ty">${s}</span>`;
+const S = s => `<span class="st">'${s}'</span>`;
+const N = s => `<span class="nm">${s}</span>`;
+const B = s => `<span class="tb">${s}</span>`;
+const F = s => `<span class="fn">${s}</span>`;
+const A = s => `<span class="al">${s}</span>`;
+const P = s => `<span class="pn">${s}</span>`;
+const C = s => `<span class="cm">${s}</span>`;
+
+// ═══════════════════════════════════════════════════════════════
+// CREATE TABLES
+// ═══════════════════════════════════════════════════════════════
+
+render('cat-create', [
+  `${K('CREATE TABLE')} ${B('CATEGORIES')} ${P('(')}`,
+  `    category_id   ${T('INT')} ${K('PRIMARY KEY')} ${K('AUTO_INCREMENT')},`,
+  `    category_name ${T('VARCHAR')}${P('(100)')} ${K('NOT NULL')},`,
+  `    description   ${T('VARCHAR')}${P('(255)')}`,
+  `${P(')')};`,
+]);
+
+render('cust-create', [
+  `${K('CREATE TABLE')} ${B('CUSTOMERS')} ${P('(')}`,
+  `    customer_id ${T('INT')} ${K('PRIMARY KEY')} ${K('AUTO_INCREMENT')},`,
+  `    name        ${T('VARCHAR')}${P('(100)')} ${K('NOT NULL')},`,
+  `    email       ${T('VARCHAR')}${P('(100)')} ${K('UNIQUE')},`,
+  `    phone       ${T('VARCHAR')}${P('(20)')},`,
+  `    address     ${T('VARCHAR')}${P('(255)')}`,
+  `${P(')')};`,
+]);
+
+render('prod-create', [
+  `${K('CREATE TABLE')} ${B('PRODUCTS')} ${P('(')}`,
+  `    product_id   ${T('INT')} ${K('PRIMARY KEY')} ${K('AUTO_INCREMENT')},`,
+  `    product_name ${T('VARCHAR')}${P('(150)')} ${K('NOT NULL')},`,
+  `    price        ${T('DECIMAL')}${P('(10,2)')} ${K('NOT NULL')},`,
+  `    stock_qty    ${T('INT')} ${K('DEFAULT')} ${N('0')},`,
+  `    category_id  ${T('INT')},`,
+  `    ${K('FOREIGN KEY')} ${P('(')}category_id${P(')')} ${K('REFERENCES')} ${B('CATEGORIES')}${P('(')}category_id${P(')')}`,
+  `${P(')')};`,
+]);
+
+render('ord-create', [
+  `${K('CREATE TABLE')} ${B('ORDERS')} ${P('(')}`,
+  `    order_id     ${T('INT')} ${K('PRIMARY KEY')} ${K('AUTO_INCREMENT')},`,
+  `    customer_id  ${T('INT')} ${K('NOT NULL')},`,
+  `    order_date   ${T('DATETIME')} ${K('DEFAULT')} ${K('CURRENT_TIMESTAMP')},`,
+  `    total_amount ${T('DECIMAL')}${P('(10,2)')},`,
+  `    status       ${T('VARCHAR')}${P('(50)')} ${K('DEFAULT')} ${S('pending')},`,
+  `    ${K('FOREIGN KEY')} ${P('(')}customer_id${P(')')} ${K('REFERENCES')} ${B('CUSTOMERS')}${P('(')}customer_id${P(')')}`,
+  `${P(')')};`,
+]);
+
+render('oi-create', [
+  `${K('CREATE TABLE')} ${B('ORDER_ITEMS')} ${P('(')}`,
+  `    item_id    ${T('INT')} ${K('PRIMARY KEY')} ${K('AUTO_INCREMENT')},`,
+  `    order_id   ${T('INT')} ${K('NOT NULL')},`,
+  `    product_id ${T('INT')} ${K('NOT NULL')},`,
+  `    quantity   ${T('INT')} ${K('NOT NULL')} ${K('CHECK')} ${P('(')}quantity ${P('>')} ${N('0')}${P(')')},`,
+  `    unit_price ${T('DECIMAL')}${P('(10,2)')} ${K('NOT NULL')},`,
+  `    ${K('FOREIGN KEY')} ${P('(')}order_id${P(')')}   ${K('REFERENCES')} ${B('ORDERS')}${P('(')}order_id${P(')')},`,
+  `    ${K('FOREIGN KEY')} ${P('(')}product_id${P(')')} ${K('REFERENCES')} ${B('PRODUCTS')}${P('(')}product_id${P(')')}`,
+  `${P(')')};`,
+]);
+
+// ═══════════════════════════════════════════════════════════════
+// INSERT DATA
+// ═══════════════════════════════════════════════════════════════
+
+render('ins-cat', [
+  `${K('INSERT INTO')} ${B('CATEGORIES')} ${P('(')}category_name, description${P(')')} ${K('VALUES')}`,
+  `    ${P('(')}${S('Electronics')}, ${S('Electronic devices and accessories')}${P(')')},`,
+  `    ${P('(')}${S('Clothes')},     ${S('Men, women and kids clothing')}${P(')')},`,
+  `    ${P('(')}${S('Furniture')},   ${S('Home and office furniture')}${P(')')},`,
+  `    ${P('(')}${S('Books')},       ${S('Scientific and literary books')}${P(')')},`,
+  `    ${P('(')}${S('Sports')},      ${S('Sports equipment and clothing')}${P(')')};`,
+]);
+
+render('ins-cust', [
+  `${K('INSERT INTO')} ${B('CUSTOMERS')} ${P('(')}name, email, phone, address${P(')')} ${K('VALUES')}`,
+  `    ${P('(')}${S('Ahmed Mohamed')},  ${S('ahmed@email.com')}, ${S('0100000001')}, ${S('Cairo')}${P(')')},`,
+  `    ${P('(')}${S('Sara Ali')},       ${S('sara@email.com')},  ${S('0100000002')}, ${S('Alexandria')}${P(')')},`,
+  `    ${P('(')}${S('Mahmoud Khaled')}, ${S('mah@email.com')},   ${S('0100000003')}, ${S('Giza')}${P(')')},`,
+  `    ${P('(')}${S('Fatma Hassan')},   ${S('fat@email.com')},   ${S('0100000004')}, ${S('Assiut')}${P(')')},`,
+  `    ${P('(')}${S('Yousef Ibrahim')}, ${S('you@email.com')},   ${S('0100000005')}, ${S('Mansoura')}${P(')')};`,
+]);
+
+render('ins-prod', [
+  `${K('INSERT INTO')} ${B('PRODUCTS')} ${P('(')}product_name, price, stock_qty, category_id${P(')')} ${K('VALUES')}`,
+  `    ${P('(')}${S('Dell Laptop')},     ${N('15000.00')}, ${N('20')}, ${N('1')}${P(')')},`,
+  `    ${P('(')}${S('Samsung Mobile')},  ${N(' 8000.00')}, ${N('50')}, ${N('1')}${P(')')},`,
+  `    ${P('(')}${S('Cotton T-Shirt')},  ${N('  200.00')}, ${N('100')}, ${N('2')}${P(')')},`,
+  `    ${P('(')}${S('Office Chair')},    ${N(' 3000.00')}, ${N('15')}, ${N('3')}${P(')')},`,
+  `    ${P('(')}${S('SQL Book')},        ${N('  150.00')}, ${N('30')}, ${N('4')}${P(')')};`,
+]);
+
+render('ins-ord', [
+  `${K('INSERT INTO')} ${B('ORDERS')} ${P('(')}customer_id, total_amount, status${P(')')} ${K('VALUES')}`,
+  `    ${P('(')}${N('1')}, ${N('23200.00')}, ${S('completed')}${P(')')},`,
+  `    ${P('(')}${N('2')},   ${N('400.00')}, ${S('completed')}${P(')')},`,
+  `    ${P('(')}${N('3')},  ${N('8000.00')}, ${S('pending')}${P(')')},`,
+  `    ${P('(')}${N('1')},  ${N('3150.00')}, ${S('completed')}${P(')')},`,
+  `    ${P('(')}${N('4')},   ${N('150.00')}, ${S('cancelled')}${P(')')};`,
+]);
+
+render('ins-oi', [
+  `${K('INSERT INTO')} ${B('ORDER_ITEMS')} ${P('(')}order_id, product_id, quantity, unit_price${P(')')} ${K('VALUES')}`,
+  `    ${P('(')}${N('1')}, ${N('1')}, ${N('1')}, ${N('15000.00')}${P(')')},`,
+  `    ${P('(')}${N('1')}, ${N('2')}, ${N('1')},  ${N('8200.00')}${P(')')},`,
+  `    ${P('(')}${N('2')}, ${N('3')}, ${N('2')},   ${N('200.00')}${P(')')},`,
+  `    ${P('(')}${N('4')}, ${N('4')}, ${N('1')},  ${N('3000.00')}${P(')')},`,
+  `    ${P('(')}${N('5')}, ${N('5')}, ${N('1')},   ${N('150.00')}${P(')')};`,
+]);
+
+// ═══════════════════════════════════════════════════════════════
+// SELECT QUERIES
+// ═══════════════════════════════════════════════════════════════
+
+render('sel1', [
+  `${K('SELECT')} o.order_id, c.name, o.order_date, o.total_amount, o.status`,
+  `${K('FROM')} ${B('ORDERS')} o`,
+  `${K('JOIN')} ${B('CUSTOMERS')} c ${K('ON')} o.customer_id ${P('=')} c.customer_id;`,
+]);
+
+render('sel2', [
+  `${K('SELECT')} oi.item_id, p.product_name, oi.quantity, oi.unit_price,`,
+  `       ${P('(')}oi.quantity ${P('*')} oi.unit_price${P(')')} ${K('AS')} ${A('subtotal')}`,
+  `${K('FROM')} ${B('ORDER_ITEMS')} oi`,
+  `${K('JOIN')} ${B('PRODUCTS')} p ${K('ON')} oi.product_id ${P('=')} p.product_id`,
+  `${K('WHERE')} oi.order_id ${P('=')} ${N('1')};`,
+]);
+
+render('sel3', [
+  `${K('SELECT')} c.name,`,
+  `       ${F('COUNT')}${P('(')}o.order_id${P(')')}    ${K('AS')} ${A('total_orders')},`,
+  `       ${F('SUM')}${P('(')}o.total_amount${P(')')} ${K('AS')} ${A('total_spent')}`,
+  `${K('FROM')} ${B('CUSTOMERS')} c`,
+  `${K('LEFT JOIN')} ${B('ORDERS')} o ${K('ON')} c.customer_id ${P('=')} o.customer_id`,
+  `${K('GROUP BY')} c.customer_id, c.name`,
+  `${K('ORDER BY')} total_spent ${K('DESC')};`,
+]);
+
+render('sel4', [
+  `${K('SELECT')} product_name, stock_qty, price`,
+  `${K('FROM')} ${B('PRODUCTS')}`,
+  `${K('WHERE')} stock_qty ${P('<')} ${N('20')}`,
+  `${K('ORDER BY')} stock_qty ${K('ASC')};`,
+]);
+</script>
+</body>
+</html>
